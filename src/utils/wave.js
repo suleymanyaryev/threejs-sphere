@@ -16,6 +16,12 @@ uniform float uHoverState;\r
 uniform vec2 uHover;\r
 uniform float uTime;
 
+uniform mat4 projectionMatrix;
+uniform mat4 modelViewMatrix;
+attribute vec3 position;
+attribute vec2 uv;
+
+
 void main() {
 
     vec4 newPosition = modelViewMatrix * vec4(position, 1.0);
@@ -30,7 +36,9 @@ void main() {
 
     vUv = uv;\r
 }`;
-const fragmentShader = `uniform sampler2D uImage;
+const fragmentShader = `
+precision mediump float;
+uniform sampler2D uImage;
 
 varying vec2 vUv;
 
@@ -175,15 +183,21 @@ export class Y {
     setImagesPositions() {
         this.scene.add(this.imagesGroup);
         this.imageStore.forEach((e) => {
-            (e.mesh.position.y =
+            const y =
                 -e.top -
                 document
                     .querySelector(".projects__container")
-                    .getBoundingClientRect().top -
-                this.viewport.height / 2 -
-                e.height / 2),
-                (e.mesh.position.x =
-                    e.left - this.viewport.width / 2 + e.width / 2);
+                    .getBoundingClientRect().top;
+
+            const x =
+                e.left -
+                this.viewport.width / 2 +
+                e.width / 2 +
+                this.viewport.width;
+
+            e.mesh.position.y = y;
+
+            e.mesh.position.x = x;
         });
     }
 
