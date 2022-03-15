@@ -50,10 +50,12 @@ export class Y {
     constructor(e) {
         this.element = e.dom;
         this.asscroll = e.asscroll;
+
         this.viewport = {
             width: window.innerWidth,
             height: window.innerHeight,
         };
+
         this.loader = new THREE.TextureLoader();
         this.scrollSpeed = 0;
         this.clock = new THREE.Clock();
@@ -69,28 +71,25 @@ export class Y {
         this.mouse = new THREE.Vector2();
         this.raycaster = new THREE.Raycaster();
 
-        const t = new Promise((resolve) => {
+        const promises = new Promise((resolve) => {
             imagesLoaded(
                 document.querySelectorAll(".project__item__img"),
                 { background: !0 },
-                (...args) => {
-                    resolve(...args);
-                }
+                resolve
             );
         });
         this.imagesGroup = new THREE.Group();
-        let o = [t];
-        Promise.all(o).then(() => {
+        Promise.all([promises]).then(() => {
             this.init();
         });
     }
+
     init() {
         this.addCanvas();
         this.addScene();
         this.addCamera();
         this.addImages();
         this.setImagesPositions();
-        this.onMouseMovement();
         this.onResize();
         this.addEventListeners();
         this.update();
@@ -102,6 +101,7 @@ export class Y {
             alpha: !0,
             powerPreference: "high-performance",
         });
+
         this.canvas = this.renderer.domElement;
         this.canvas.classList.add("webgl");
         this.element.appendChild(this.canvas);
@@ -139,44 +139,36 @@ export class Y {
             fragmentShader: fragmentShader,
             vertexShader: vertexShader,
         });
+
         this.materials = [];
-        this.imageStore = this.allImages.map((e) => {
-            let t = e.getBoundingClientRect();
-            let o = new THREE.PlaneGeometry(t.width, t.height, 16, 16);
-            let r = this.loader.load(e.src);
-            r.needsUpdate = !0;
-            let s = this.material.clone();
-            this.materials.push(s), (s.uniforms.uImage.value = r);
-            let l = new THREE.Mesh(o, s);
-            return (
-                this.imagesGroup.add(l),
-                e.addEventListener("mouseenter", () => {
-                    gsap.to(s.uniforms.uHoverState, {
-                        duration: 1,
-                        value: 1,
-                        ease: "power3.out",
-                    });
-                }),
-                e.addEventListener("mouseout", () => {
-                    gsap.to(s.uniforms.uHoverState, {
-                        duration: 1,
-                        value: 0,
-                        ease: "power3.out",
-                    });
-                }),
-                {
-                    img: e,
-                    mesh: l,
-                    top: t.top - window.innerHeight,
-                    left:
-                        t.left -
-                        (window.innerWidth +
-                            document.querySelector(".l__separator")
-                                .offsetWidth),
-                    width: t.width,
-                    height: t.height,
-                }
+
+        this.imageStore = this.allImages.map((image) => {
+            let imageRect = image.getBoundingClientRect();
+            let geometry = new THREE.PlaneGeometry(
+                imageRect.width,
+                imageRect.height,
+                16,
+                16
             );
+            let material = this.loader.load(image.src);
+            material.needsUpdate = !0;
+            let materialClone = this.material.clone();
+            this.materials.push(materialClone);
+            materialClone.uniforms.uImage.value = material;
+            let l = new THREE.Mesh(geometry, materialClone);
+            this.imagesGroup.add(l);
+
+            return {
+                img: image,
+                mesh: l,
+                top: imageRect.top - window.innerHeight,
+                left:
+                    imageRect.left -
+                    (window.innerWidth +
+                        document.querySelector(".l__separator").offsetWidth),
+                width: imageRect.width,
+                height: imageRect.height,
+            };
         });
     }
 
@@ -226,24 +218,6 @@ export class Y {
         this.renderer.setSize(this.viewport.width, this.viewport.height);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         this.setImagesPositions();
-    }
-
-    onMouseMovement() {
-        window.addEventListener(
-            "mousemove",
-            (e) => {
-                (this.mouse.x = (e.clientX / this.viewport.width) * 2 - 1),
-                    (this.mouse.y =
-                        -(e.clientY / this.viewport.height) * 2 + 1),
-                    this.raycaster.setFromCamera(this.mouse, this.camera);
-                const t = this.raycaster.intersectObjects(this.scene.children);
-                if (t.length > 0) {
-                    let o = t[0].object;
-                    o.material.uniforms.uHover.value = t[0].uv;
-                }
-            },
-            !1
-        );
     }
 
     update() {

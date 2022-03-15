@@ -193,14 +193,14 @@
 </template>
 
 <script>
-import { BaseSome } from "@/utils/wave";
+// import { BaseSome } from "@/utils/wave";
 
 export default {
     name: "App",
 
-    mounted() {
-        new BaseSome();
-    },
+    // mounted() {
+    //     new BaseSome();
+    // },
 };
 </script>
 
